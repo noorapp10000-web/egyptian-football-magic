@@ -98,6 +98,10 @@ export type MatchEvent = {
   player: string | null;
   playerPhotoUrl: string | null;
   relatedPlayer: string | null;
+  /** حدث مستنتج من التعليق الحي (ركنية، تسلل، إصابة...) وليس من قائمة الأحداث الرسمية. */
+  derived?: boolean;
+  /** نص التعليق المرتبط بالحدث المستنتج. */
+  text?: string | null;
 };
 
 export type StatRow = {
@@ -122,6 +126,8 @@ export type MatchDetail = Match & {
   awayFormation: string | null;
   tvChannels: string[];
   events: MatchEvent[];
+  /** كل أحداث المباراة: الرسمية + المستنتجة من التعليق، مرتبة بالدقيقة. */
+  timeline: MatchEvent[];
   stats: MatchStats;
   lineups: {
     home: LineupPlayer[];
@@ -131,6 +137,7 @@ export type MatchDetail = Match & {
   };
   commentary: { id: number; minute: number | null; text: string; half: string | null }[];
 };
+
 
 /* ---------------------------------- utils --------------------------------- */
 
