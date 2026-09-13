@@ -872,7 +872,7 @@ export async function loadSquad() {
 }
 
 export async function loadStandings() {
-  const entry = await cached("standings", 5 * 60_000, async () => {
+  const entry = await cached("standings", 60 * 60_000, async () => {
     const rows = parseStandings(await fetchHtml(STANDINGS_URL));
     if (rows.length === 0) throw new Error("جدول الترتيب فارغ");
     return rows;
@@ -884,7 +884,7 @@ export async function loadStandings() {
 }
 
 export async function loadNews() {
-  const entry = await cached("news", 3 * 60_000, async () => {
+  const entry = await cached("news", 60 * 60_000, async () => {
     const [fgHtml, teamHtml, aggXml] = await Promise.all([
       fetchHtml(FG_NEWS_URL).catch(() => ""),
       fetchHtml(FG_TEAM_URL).catch(() => ""),
