@@ -525,6 +525,66 @@ export function parseMatchDetail(html: string): MatchDetail | null {
   };
 }
 
+/* ------------------- كل أحداث المباراة (رسمية + مستنتجة من التعليق) ------------------ */
+
+/** أنماط الأحداث اللي "في الجول" بيذكرها في التعليق الحي فقط. */
+const DERIVED_PATTERNS: { type: string; test: RegExp }[] = [
+  { type: "var", test: /تقنية الفيديو|حكم الفيديو|\bVAR\b|الـ ?var/i },
+  { type: "missed-penalty", test: /(يضيع|أضاع|أهدر|يهدر|ضائعة).{0,25}(ركلة|ضربة) جزاء/ },
+  { type: "penalty-saved", test: /(يتصدى|تصدى|أنقذ).{0,25}(ركلة|ضربة) جزاء/ },
+  { type: "penalty-awarded", test: /(ركلة|ضربة) جزاء/ },
+  { type: "injury", test: /إصاب|الطاقم الطبي|يتلقى العلاج|نقالة|الجهاز الطبي/ },
+  { type: "woodwork", test: /القائم|العارضة/ },
+  { type: "corner", test: /ركنية|كورنر/ },
+  { type: "offside", test: /تسلل/ },
+  { type: "save", test: /يتصدى|تصدى|ينقذ|أنقذ|تصدي الحارس/ },
+  { type: "freekick", test: /ركلة حرة|مخالفة/ },
+  { type: "shot", test: /تسديدة|يسدد|تصويبة|رأسية/ },
+  { type: "kick-off", test: /انطلاق|بداية الشوط|صافرة البداية/ },
+  { type: "half-time", test: /نهاية الشوط الأول/ },
+  { type: "full-time", test: /نهاية المباراة|صافرة النهاية/ },
+];
+
+function buildTimeline(
+  events: MatchEvent[],
+  commentary: { id: number; minute: number | null; text: string; half: string | null }[],
+  homeName: string,
+  awayName: string,
+  homeId: number,
+  awayId: number,
+): MatchEvent[] {
+  const isHome = teamMatcher(homeName);
+  const isAway = teamMatcher(awayName);
+  const derived: MatchEvent[] = [];
+
+  for (const c of commentary) {
+    // الأهداف والبطاقات والتبديلات موجودة أصلاً في الأحداث الرسمية.
+    if (/هدف|بطاقة|تبديل|يسجل|سجل/.test(c.text)) continue;
+    const match = DERIVED_PATTERNS.find((p) => p.test.test(c.text));
+    if (!match) continue;
+
+    const home = isHome(c.text);
+    const away = isAway(c.text);
+    derived.push({
+      id: -c.id,
+      minute: c.minute,
+      addedTime: null,
+      type: match.type,
+      half: c.half,
+      teamId: home && !away ? homeId : away && !home ? awayId : null,
+      teamName: home && !away ? homeName : away && !home ? awayName : null,
+      player: null,
+      playerPhotoUrl: null,
+      relatedPlayer: null,
+      derived: true,
+      text: c.text,
+    });
+  }
+
+  return [...events, ...derived].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+}
+
+
 /* ------------------------- إحصائيات المباراة (استنتاج) ------------------------ */
 
 /** يطابق اسم فريق داخل نص التعليق (بالاسم الكامل أو أطول كلمة مميزة فيه). */
