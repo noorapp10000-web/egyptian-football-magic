@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Match, Source } from "@/lib/hub-types";
 import { MASRY_ID } from "@/lib/hub-types";
+import { formatKickoff, formatTime12 } from "@/lib/time";
+
 
 export function SourceNote({ source }: { source?: Source | undefined }) {
   if (!source) return null;
@@ -15,12 +17,9 @@ export function SourceNote({ source }: { source?: Source | undefined }) {
       ) : (
         <RefreshCw className="size-3.5" />
       )}
-      المصدر: {source.name} · آخر مزامنة{" "}
-      {new Date(source.fetchedAt).toLocaleTimeString("ar-EG", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}
+      المصدر: {source.name} · آخر مزامنة {formatTime12(new Date(source.fetchedAt))}
       {source.status === "cached" && " (نسخة محفوظة)"}
+
     </p>
   );
 }
@@ -116,12 +115,13 @@ export function MatchCard({ match }: { match: Match }) {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-        {match.kickoffText && (
+        {formatKickoff(match.kickoff, match.kickoffText) && (
           <span className="flex items-center gap-1">
             <CalendarDays className="size-3.5" />
-            {match.kickoffText}
+            {formatKickoff(match.kickoff, match.kickoffText)}
           </span>
         )}
+
         {match.venue && (
           <span className="flex min-w-0 items-center gap-1">
             <MapPin className="size-3.5 shrink-0" />
