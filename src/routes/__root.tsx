@@ -7,12 +7,15 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BottomNav } from "@/components/hub/bottom-nav";
+import { Toaster } from "@/components/ui/sonner";
 import { TEAM_CREST } from "@/lib/hub-types";
+import { useOfflinePersistence } from "@/lib/offline-cache";
+
 
 
 function NotFoundComponent() {

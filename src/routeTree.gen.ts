@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as NewsRouteImport } from './routes/news'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SquadRouteImport } from './routes/squad'
 import { Route as TableRouteImport } from './routes/table'
 import { Route as MatchesIndexRouteImport } from './routes/matches.index'
@@ -31,6 +32,11 @@ const HistoryRoute = HistoryRouteImport.update({
 const NewsRoute = NewsRouteImport.update({
   id: '/news',
   path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SquadRoute = SquadRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
   '/news': typeof NewsRoute
+  '/settings': typeof SettingsRoute
   '/squad': typeof SquadRoute
   '/table': typeof TableRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
   '/news': typeof NewsRoute
+  '/settings': typeof SettingsRoute
   '/squad': typeof SquadRoute
   '/table': typeof TableRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/history': typeof HistoryRoute
   '/news': typeof NewsRoute
+  '/settings': typeof SettingsRoute
   '/squad': typeof SquadRoute
   '/table': typeof TableRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/history'
     | '/news'
+    | '/settings'
     | '/squad'
     | '/table'
     | '/matches/$matchId'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/history'
     | '/news'
+    | '/settings'
     | '/squad'
     | '/table'
     | '/matches/$matchId'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/history'
     | '/news'
+    | '/settings'
     | '/squad'
     | '/table'
     | '/matches/$matchId'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HistoryRoute: typeof HistoryRoute
   NewsRoute: typeof NewsRoute
+  SettingsRoute: typeof SettingsRoute
   SquadRoute: typeof SquadRoute
   TableRoute: typeof TableRoute
   MatchesMatchIdRoute: typeof MatchesMatchIdRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/news'
       fullPath: '/news'
       preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/squad': {
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HistoryRoute: HistoryRoute,
   NewsRoute: NewsRoute,
+  SettingsRoute: SettingsRoute,
   SquadRoute: SquadRoute,
   TableRoute: TableRoute,
   MatchesMatchIdRoute: MatchesMatchIdRoute,
