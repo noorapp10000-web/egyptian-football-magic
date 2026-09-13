@@ -21,8 +21,13 @@ import {
   StatusBadge,
   TeamMark,
 } from "@/components/hub/shared";
+import { RefreshButton } from "@/components/hub/refresh-button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { eventEmoji, eventLabel, eventTone } from "@/lib/match-events";
+import { intervalForMatchDetail } from "@/lib/refresh-policy";
+import { formatKickoff } from "@/lib/time";
+
 
 export const Route = createFileRoute("/matches/$matchId")({
   head: () => ({
@@ -45,24 +50,8 @@ export const Route = createFileRoute("/matches/$matchId")({
   component: MatchDetailPage,
 });
 
-const EVENT_LABEL: Record<string, string> = {
-  goal: "هدف",
-  "own-goal": "هدف عكسي",
-  penalty: "ضربة جزاء",
-  "missed-penalty": "ضربة جزاء ضائعة",
-  "yellow-card": "بطاقة صفراء",
-  "red-card": "بطاقة حمراء",
-  substitution: "تبديل",
-};
 
-const EVENT_TONE = (type: string) =>
-  /goal|penalty/.test(type) && !/missed/.test(type)
-    ? "border-primary/40 bg-primary/10 text-primary"
-    : /red-card/.test(type)
-      ? "border-live/40 bg-live/10 text-live"
-      : /yellow/.test(type)
-        ? "border-gold/40 bg-gold/10 text-gold"
-        : "border-border/70 bg-secondary/50 text-muted-foreground";
+
 
 function StatBar({
   label,
@@ -107,7 +96,7 @@ function MatchDetailPage() {
     queryKey: ["match-detail", id],
     queryFn: () => getMatchDetail({ data: { matchId: id } }),
     enabled: Number.isFinite(id),
-    refetchInterval: (query) => (query.state.data?.match.status === "live" ? 20_000 : false),
+    refetchInterval: (query) => intervalForMatchDetail(query.state.data?.match),
   });
 
   if (isLoading) return <SectionSkeleton cards={3} />;
@@ -177,8 +166,16 @@ function MatchDetailPage() {
               <Tv className="size-3.5" /> {m.tvChannels.join("، ")}
             </span>
           )}
+          {formatKickoff(m.kickoff, m.kickoffText) && (
+            <span className="flex items-center gap-1">🕒 {formatKickoff(m.kickoff, m.kickoffText)}</span>
+          )}
+        </div>
+
+        <div className="mt-4 flex justify-center">
+          <RefreshButton queryKeys={[["match-detail", Number(matchId)]]} label="تحديث المباراة" />
         </div>
       </div>
+
 
       <Tabs defaultValue={m.events.length > 0 ? "events" : hasLineups ? "lineups" : "stats"} dir="rtl">
         <TabsList className="grid w-full grid-cols-4 rounded-2xl">
@@ -197,22 +194,25 @@ function MatchDetailPage() {
         </TabsList>
 
         <TabsContent value="events" className="mt-4 space-y-2">
-          {m.events.length === 0 && <ErrorNote>لا توجد أحداث مسجلة لهذه المباراة بعد.</ErrorNote>}
-          {m.events.map((e) => (
+          {m.timeline.length === 0 && <ErrorNote>لا توجد أحداث مسجلة لهذه المباراة بعد.</ErrorNote>}
+          {m.timeline.map((e) => (
             <div
-              key={e.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card px-3 py-2.5"
+              key={`${e.derived ? "d" : "o"}-${e.id}`}
+              className="flex items-start justify-between gap-3 rounded-2xl border border-border/70 bg-card px-3 py-2.5"
             >
-              <span className="flex min-w-0 items-center gap-2">
-                <Badge variant="outline" className={`shrink-0 text-[10px] ${EVENT_TONE(e.type)}`}>
-                  {EVENT_LABEL[e.type] ?? e.type}
+              <span className="flex min-w-0 items-start gap-2">
+                <Badge variant="outline" className={`shrink-0 text-[10px] ${eventTone(e.type)}`}>
+                  <span aria-hidden>{eventEmoji(e.type)}</span> {eventLabel(e.type)}
                 </Badge>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-bold">{e.player ?? "—"}</span>
-                  {(e.relatedPlayer || e.teamName) && (
-                    <span className="block truncate text-[11px] text-muted-foreground">
+                  <span className="block truncate text-sm font-bold">
+                    {e.player ?? e.teamName ?? "—"}
+                  </span>
+                  {(e.relatedPlayer || e.teamName || e.text) && (
+                    <span className="block text-[11px] leading-relaxed text-muted-foreground">
                       {e.relatedPlayer ? `${e.relatedPlayer} · ` : ""}
-                      {e.teamName ?? ""}
+                      {e.player && e.teamName ? `${e.teamName} · ` : ""}
+                      {e.text ?? ""}
                     </span>
                   )}
                 </span>
@@ -223,6 +223,7 @@ function MatchDetailPage() {
             </div>
           ))}
         </TabsContent>
+
 
         <TabsContent value="stats" className="mt-4">
           {!hasStats && <ErrorNote>الإحصائيات غير متاحة لهذه المباراة.</ErrorNote>}

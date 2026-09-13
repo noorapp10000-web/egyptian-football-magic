@@ -98,6 +98,10 @@ export type MatchEvent = {
   player: string | null;
   playerPhotoUrl: string | null;
   relatedPlayer: string | null;
+  /** حدث مستنتج من التعليق الحي (ركنية، تسلل، إصابة...) وليس من قائمة الأحداث الرسمية. */
+  derived?: boolean;
+  /** نص التعليق المرتبط بالحدث المستنتج. */
+  text?: string | null;
 };
 
 export type StatRow = {
@@ -122,6 +126,8 @@ export type MatchDetail = Match & {
   awayFormation: string | null;
   tvChannels: string[];
   events: MatchEvent[];
+  /** كل أحداث المباراة: الرسمية + المستنتجة من التعليق، مرتبة بالدقيقة. */
+  timeline: MatchEvent[];
   stats: MatchStats;
   lineups: {
     home: LineupPlayer[];
@@ -131,6 +137,7 @@ export type MatchDetail = Match & {
   };
   commentary: { id: number; minute: number | null; text: string; half: string | null }[];
 };
+
 
 /* ---------------------------------- utils --------------------------------- */
 
@@ -493,12 +500,21 @@ export function parseMatchDetail(html: string): MatchDetail | null {
       String((raw as Record<string, never>)["TvChannelName"] ?? ""),
     ),
     events,
+    timeline: buildTimeline(
+      events,
+      commentary,
+      String(get<string>("HomeTeamName") ?? ""),
+      String(get<string>("AwayTeamName") ?? ""),
+      Number(get<number>("HomeTeamId")),
+      Number(get<number>("AwayTeamId")),
+    ),
     stats: deriveStats(
       commentary,
       events,
       String(get<string>("HomeTeamName") ?? ""),
       String(get<string>("AwayTeamName") ?? ""),
     ),
+
     lineups: {
       home: mapSquad(get<unknown[]>("HomeTeamSquad") ?? []),
       away: mapSquad(get<unknown[]>("AwayTeamSquad") ?? []),
@@ -508,6 +524,66 @@ export function parseMatchDetail(html: string): MatchDetail | null {
     commentary,
   };
 }
+
+/* ------------------- كل أحداث المباراة (رسمية + مستنتجة من التعليق) ------------------ */
+
+/** أنماط الأحداث اللي "في الجول" بيذكرها في التعليق الحي فقط. */
+const DERIVED_PATTERNS: { type: string; test: RegExp }[] = [
+  { type: "var", test: /تقنية الفيديو|حكم الفيديو|\bVAR\b|الـ ?var/i },
+  { type: "missed-penalty", test: /(يضيع|أضاع|أهدر|يهدر|ضائعة).{0,25}(ركلة|ضربة) جزاء/ },
+  { type: "penalty-saved", test: /(يتصدى|تصدى|أنقذ).{0,25}(ركلة|ضربة) جزاء/ },
+  { type: "penalty-awarded", test: /(ركلة|ضربة) جزاء/ },
+  { type: "injury", test: /إصاب|الطاقم الطبي|يتلقى العلاج|نقالة|الجهاز الطبي/ },
+  { type: "woodwork", test: /القائم|العارضة/ },
+  { type: "corner", test: /ركنية|كورنر/ },
+  { type: "offside", test: /تسلل/ },
+  { type: "save", test: /يتصدى|تصدى|ينقذ|أنقذ|تصدي الحارس/ },
+  { type: "freekick", test: /ركلة حرة|مخالفة/ },
+  { type: "shot", test: /تسديدة|يسدد|تصويبة|رأسية/ },
+  { type: "kick-off", test: /انطلاق|بداية الشوط|صافرة البداية/ },
+  { type: "half-time", test: /نهاية الشوط الأول/ },
+  { type: "full-time", test: /نهاية المباراة|صافرة النهاية/ },
+];
+
+function buildTimeline(
+  events: MatchEvent[],
+  commentary: { id: number; minute: number | null; text: string; half: string | null }[],
+  homeName: string,
+  awayName: string,
+  homeId: number,
+  awayId: number,
+): MatchEvent[] {
+  const isHome = teamMatcher(homeName);
+  const isAway = teamMatcher(awayName);
+  const derived: MatchEvent[] = [];
+
+  for (const c of commentary) {
+    // الأهداف والبطاقات والتبديلات موجودة أصلاً في الأحداث الرسمية.
+    if (/هدف|بطاقة|تبديل|يسجل|سجل/.test(c.text)) continue;
+    const match = DERIVED_PATTERNS.find((p) => p.test.test(c.text));
+    if (!match) continue;
+
+    const home = isHome(c.text);
+    const away = isAway(c.text);
+    derived.push({
+      id: -c.id,
+      minute: c.minute,
+      addedTime: null,
+      type: match.type,
+      half: c.half,
+      teamId: home && !away ? homeId : away && !home ? awayId : null,
+      teamName: home && !away ? homeName : away && !home ? awayName : null,
+      player: null,
+      playerPhotoUrl: null,
+      relatedPlayer: null,
+      derived: true,
+      text: c.text,
+    });
+  }
+
+  return [...events, ...derived].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+}
+
 
 /* ------------------------- إحصائيات المباراة (استنتاج) ------------------------ */
 
@@ -796,7 +872,7 @@ export async function loadSquad() {
 }
 
 export async function loadStandings() {
-  const entry = await cached("standings", 5 * 60_000, async () => {
+  const entry = await cached("standings", 60 * 60_000, async () => {
     const rows = parseStandings(await fetchHtml(STANDINGS_URL));
     if (rows.length === 0) throw new Error("جدول الترتيب فارغ");
     return rows;
@@ -808,7 +884,7 @@ export async function loadStandings() {
 }
 
 export async function loadNews() {
-  const entry = await cached("news", 3 * 60_000, async () => {
+  const entry = await cached("news", 60 * 60_000, async () => {
     const [fgHtml, teamHtml, aggXml] = await Promise.all([
       fetchHtml(FG_NEWS_URL).catch(() => ""),
       fetchHtml(FG_TEAM_URL).catch(() => ""),
