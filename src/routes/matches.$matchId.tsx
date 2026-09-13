@@ -45,24 +45,8 @@ export const Route = createFileRoute("/matches/$matchId")({
   component: MatchDetailPage,
 });
 
-const EVENT_LABEL: Record<string, string> = {
-  goal: "هدف",
-  "own-goal": "هدف عكسي",
-  penalty: "ضربة جزاء",
-  "missed-penalty": "ضربة جزاء ضائعة",
-  "yellow-card": "بطاقة صفراء",
-  "red-card": "بطاقة حمراء",
-  substitution: "تبديل",
-};
 
-const EVENT_TONE = (type: string) =>
-  /goal|penalty/.test(type) && !/missed/.test(type)
-    ? "border-primary/40 bg-primary/10 text-primary"
-    : /red-card/.test(type)
-      ? "border-live/40 bg-live/10 text-live"
-      : /yellow/.test(type)
-        ? "border-gold/40 bg-gold/10 text-gold"
-        : "border-border/70 bg-secondary/50 text-muted-foreground";
+
 
 function StatBar({
   label,
