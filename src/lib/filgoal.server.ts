@@ -500,12 +500,21 @@ export function parseMatchDetail(html: string): MatchDetail | null {
       String((raw as Record<string, never>)["TvChannelName"] ?? ""),
     ),
     events,
+    timeline: buildTimeline(
+      events,
+      commentary,
+      String(get<string>("HomeTeamName") ?? ""),
+      String(get<string>("AwayTeamName") ?? ""),
+      Number(get<number>("HomeTeamId")),
+      Number(get<number>("AwayTeamId")),
+    ),
     stats: deriveStats(
       commentary,
       events,
       String(get<string>("HomeTeamName") ?? ""),
       String(get<string>("AwayTeamName") ?? ""),
     ),
+
     lineups: {
       home: mapSquad(get<unknown[]>("HomeTeamSquad") ?? []),
       away: mapSquad(get<unknown[]>("AwayTeamSquad") ?? []),
