@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TEAM_CREST } from "@/lib/hub-types";
 import { useScheduledRefresh } from "@/lib/scheduled-refresh";
+import { RefreshButton } from "@/components/hub/refresh-button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -61,10 +62,14 @@ function Hero() {
       <div className="pointer-events-none absolute -top-16 -start-10 size-48 rounded-full bg-primary/20 blur-3xl" />
       <div className="relative flex items-center gap-3">
         <img src={TEAM_CREST} alt="شعار النادي المصري" className="size-14 object-contain" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="text-xl font-black leading-tight">النادي المصري البورسعيدي</h1>
           <p className="text-[11px] text-muted-foreground">مباريات · ترتيب · لاعبون · أخبار</p>
         </div>
+        <RefreshButton
+          queryKeys={[["matches"], ["standings"], ["squad"], ["news"]]}
+          label="تحديث الكل"
+        />
       </div>
 
       <div className="relative mt-5">
