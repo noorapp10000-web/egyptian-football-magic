@@ -4,6 +4,7 @@ import { Goal, Shirt, Users } from "lucide-react";
 
 import { getSquad } from "@/lib/hub.functions";
 import { ErrorNote, SectionHeading, SectionSkeleton, SourceNote } from "@/components/hub/shared";
+import { RefreshButton } from "@/components/hub/refresh-button";
 import { Badge } from "@/components/ui/badge";
 import type { SquadPlayer } from "@/lib/hub-types";
 
@@ -94,7 +95,11 @@ function SquadPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeading icon={<Users className="size-4" />} title="الفريق" />
+      <SectionHeading
+        icon={<Users className="size-4" />}
+        title="الفريق"
+        action={<RefreshButton queryKeys={[["squad"]]} />}
+      />
 
       {data.coach?.name && (
         <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-card card-sheen p-4">

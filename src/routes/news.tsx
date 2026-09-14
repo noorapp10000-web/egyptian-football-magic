@@ -5,6 +5,7 @@ import { ExternalLink, Newspaper } from "lucide-react";
 import { getNews } from "@/lib/hub.functions";
 import { ErrorNote, SectionHeading, SectionSkeleton, SourceNote } from "@/components/hub/shared";
 import { Badge } from "@/components/ui/badge";
+import { RefreshButton } from "@/components/hub/refresh-button";
 
 export const Route = createFileRoute("/news")({
   head: () => ({
@@ -42,7 +43,11 @@ function NewsPage() {
 
   return (
     <div className="space-y-4">
-      <SectionHeading icon={<Newspaper className="size-4" />} title="آخر الأخبار" />
+      <SectionHeading
+        icon={<Newspaper className="size-4" />}
+        title="آخر الأخبار"
+        action={<RefreshButton queryKeys={[["news"]]} />}
+      />
 
       {lead && (
         <a

@@ -9,6 +9,7 @@ import { useScheduledRefresh } from "@/lib/scheduled-refresh";
 const STANDINGS_REFRESH_HOURS = [20, 22, 0, 3];
 import { ErrorNote, SectionHeading, SectionSkeleton, SourceNote } from "@/components/hub/shared";
 import { Badge } from "@/components/ui/badge";
+import { RefreshButton } from "@/components/hub/refresh-button";
 
 export const Route = createFileRoute("/table")({
   head: () => ({
@@ -44,7 +45,11 @@ function TablePage() {
 
   return (
     <div className="space-y-4">
-      <SectionHeading icon={<ListOrdered className="size-4" />} title="جدول الدوري" />
+      <SectionHeading
+        icon={<ListOrdered className="size-4" />}
+        title="جدول الدوري"
+        action={<RefreshButton queryKeys={[["standings"]]} />}
+      />
 
       <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
         <div className="grid grid-cols-[2rem_minmax(0,1fr)_2rem_2rem_2.6rem_2.4rem] items-center gap-2 border-b border-border/70 bg-secondary/50 px-3 py-2.5 text-[10px] font-bold text-muted-foreground">
