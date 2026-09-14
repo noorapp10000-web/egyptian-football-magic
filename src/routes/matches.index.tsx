@@ -11,6 +11,7 @@ import {
   SourceNote,
 } from "@/components/hub/shared";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RefreshButton } from "@/components/hub/refresh-button";
 
 export const Route = createFileRoute("/matches/")({
   head: () => ({
@@ -51,7 +52,11 @@ function MatchesPage() {
 
   return (
     <div className="space-y-4">
-      <SectionHeading icon={<CalendarDays className="size-4" />} title="المباريات" />
+      <SectionHeading
+        icon={<CalendarDays className="size-4" />}
+        title="المباريات"
+        action={<RefreshButton queryKeys={[["matches"]]} />}
+      />
       <Tabs defaultValue={upcoming.length > 0 ? "upcoming" : "results"} dir="rtl">
         <TabsList className="grid w-full grid-cols-2 rounded-2xl">
           <TabsTrigger value="upcoming" className="rounded-xl">
